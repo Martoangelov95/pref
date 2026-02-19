@@ -1,0 +1,20 @@
+name: Refresh Prices
+
+on:
+  schedule:
+    # Every 30 min on weekdays during US market hours (9am–5:30pm ET = 13:00–21:30 UTC)
+    - cron: '*/30 13-21 * * 1-5'
+    # Every 3 hours all other times (nights, weekends, after-hours)
+    - cron: '0 */3 * * *'
+  workflow_dispatch: # Allow manual trigger from the GitHub Actions UI
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Refresh stock prices
+        run: |
+          curl -f -s -o /dev/null -w "HTTP %{http_code}" -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/refresh-prices"
