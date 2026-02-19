@@ -188,6 +188,42 @@ export async function getCommonHealth(commonTicker: string): Promise<CommonStock
 }
 
 /**
+ * Build a minimal QuantumFundamentals stub from Yahoo Finance price data.
+ * Used on cold-start so all tickers show up immediately without needing QOL scraping first.
+ * Fields unavailable from Yahoo Finance are set to null/unknown defaults.
+ * These stubs are overwritten as soon as a real QOL scrape succeeds for that ticker.
+ */
+export function buildStubFundamentals(
+  ticker: string,
+  commonTicker: string,
+  price: PriceSnapshot
+): QuantumFundamentals {
+  const parValue = 25; // Correct for 99%+ of exchange-traded preferreds
+  const annualDividend = price.trailingAnnualDividendRate || 0;
+  const couponRate = annualDividend > 0 ? annualDividend / parValue : 0;
+
+  return {
+    ticker,
+    issuerName: price.shortName || ticker,
+    commonTicker,
+    callDate: null,
+    callPrice: parValue,
+    parValue,
+    couponRate,
+    annualDividend,
+    dividendType: 'unknown',
+    spRating: null,
+    moodysRating: null,
+    isInvestmentGrade: false,
+    sector: 'other',
+    isFixedRate: true,
+    cusip: '',
+    description: 'Awaiting QuantumOnline data',
+    scrapedAt: new Date().toISOString(),
+  };
+}
+
+/**
  * Retrieve all stocks from Redis. Returns stocks that exist in cache,
  * with minimal stub data for any not yet cached.
  */

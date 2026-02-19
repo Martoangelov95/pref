@@ -3,6 +3,7 @@ import { scrapeQuantumFundamentals } from '@/lib/fetchers/quantum-online';
 import { batchFetchPrices, batchFetchCommonHealth } from '@/lib/fetchers/yahoo-finance';
 import {
   buildAndSaveStock,
+  buildStubFundamentals,
   saveFundamentals,
   savePrice,
   saveCommonHealth,
@@ -53,12 +54,17 @@ export async function refreshAllPrices(): Promise<RefreshResult> {
     await savePrice(price);
     pricesUpdated++;
 
-    // Rebuild the full stock object if fundamentals are in cache
-    const fundamentals = await getFundamentals(entry.ticker);
-    if (fundamentals) {
-      const commonHealth = commonHealthMap.get(entry.commonTicker) || await getCommonHealth(entry.commonTicker);
-      await buildAndSaveStock(fundamentals, price, commonHealth);
-    }
+    // Use real QOL fundamentals if available, otherwise build a stub so the
+    // stock appears in the dashboard immediately on cold-start.
+    const fundamentals =
+      (await getFundamentals(entry.ticker)) ??
+      buildStubFundamentals(entry.ticker, entry.commonTicker, price);
+
+    const commonHealth =
+      commonHealthMap.get(entry.commonTicker) ??
+      (await getCommonHealth(entry.commonTicker));
+
+    await buildAndSaveStock(fundamentals, price, commonHealth);
   }
 
   await redis.set(CACHE_KEYS.metaLastPriceRefresh, new Date().toISOString(), { ex: TTL.meta });

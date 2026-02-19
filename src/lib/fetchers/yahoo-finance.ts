@@ -24,6 +24,7 @@ export async function fetchPreferredPrice(ticker: string): Promise<PriceSnapshot
       fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh ?? 0,
       fiftyTwoWeekLow: quote.fiftyTwoWeekLow ?? 0,
       trailingAnnualDividendRate: quote.trailingAnnualDividendRate ?? 0,
+      shortName: quote.shortName ?? quote.longName ?? undefined,
       fetchedAt: new Date().toISOString(),
     };
   } catch (err) {

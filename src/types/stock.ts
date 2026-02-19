@@ -43,6 +43,7 @@ export interface PriceSnapshot {
   fiftyTwoWeekHigh: number;
   fiftyTwoWeekLow: number;
   trailingAnnualDividendRate: number;
+  shortName?: string; // Issuer display name from Yahoo Finance
   fetchedAt: string; // ISO timestamp
 }
 
