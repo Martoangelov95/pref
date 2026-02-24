@@ -57,6 +57,14 @@ function RefreshLinks() {
       >
         Run AI screener
       </a>
+      <span className="text-border">|</span>
+      <a
+        href="/api/admin/seed-from-sheet"
+        className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+        title="Seed fundamentals from Google Sheet (run once on cold start)"
+      >
+        Seed from sheet
+      </a>
     </div>
   );
 }
