@@ -31,9 +31,13 @@ const REC_COLORS: Record<string, string> = {
 export function ScreenerIdeas({ ideas }: { ideas: BatchScreenerIdea[] }) {
   if (ideas.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground text-center py-8">
-        No screener ideas yet. Run the AI screener from the cron endpoint.
-      </p>
+      <div className="text-center py-10 space-y-2">
+        <p className="text-sm text-muted-foreground">No screener ideas yet.</p>
+        <p className="text-xs text-muted-foreground">
+          Click <span className="font-medium text-foreground">Run AI Screener</span> above to generate the top 10 trade ideas.
+          Make sure prices are loaded first (stocks dashboard → Refresh prices).
+        </p>
+      </div>
     );
   }
 
