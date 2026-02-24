@@ -146,7 +146,9 @@ export function AIIdeaStream({ ticker, cachedIdea }: AIIdeaStreamProps) {
 }
 
 function parseStreamedIdea(text: string, ticker: string) {
-  const jsonMatch = text.match(/\{[\s\S]*?\}/);
+  // Strip markdown code fences, then greedily match the full JSON object
+  const stripped = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+  const jsonMatch = stripped.match(/\{[\s\S]*\}/);
   let parsed: Record<string, unknown> = {};
   if (jsonMatch) {
     try { parsed = JSON.parse(jsonMatch[0]); } catch { /* ignore */ }

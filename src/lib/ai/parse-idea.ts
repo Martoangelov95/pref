@@ -1,21 +1,16 @@
 import type { TradeIdea } from '@/types/ai';
 
 export function parseTradeIdeaFromStream(text: string, ticker: string): TradeIdea {
-  // Try to extract a JSON block
-  const jsonMatch = text.match(/\{[\s\S]*?\}/);
+  // Strip markdown code fences, then greedily match the full JSON object
+  const stripped = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+  const jsonMatch = stripped.match(/\{[\s\S]*\}/);
   let parsed: Partial<TradeIdea> = {};
 
   if (jsonMatch) {
     try {
       parsed = JSON.parse(jsonMatch[0]);
     } catch {
-      // Try a larger block
-      try {
-        const largerMatch = text.match(/\{[\s\S]*\}/);
-        if (largerMatch) parsed = JSON.parse(largerMatch[0]);
-      } catch {
-        // Could not parse JSON
-      }
+      // Could not parse JSON — continue with defaults
     }
   }
 

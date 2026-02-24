@@ -146,25 +146,36 @@ Provide your analysis as JSON (strictly valid JSON only, no markdown code blocks
 }
 
 export function buildBatchScreenerPrompt(stocks: PreferredStock[]): string {
-  const stockData = stocks
-    .filter(s => s.currentPrice > 0)
-    .map(s => ({
-      t: s.ticker,
-      sect: s.sector,
-      cy: +(s.currentYield * 100).toFixed(2),
-      ytc: s.ytc !== null ? +(s.ytc * 100).toFixed(2) : null,
-      cs: s.callStatus,
-      p2c: s.isPricedToCall,
-      pr: +s.currentPrice.toFixed(2),
-      call: s.callPrice,
-      ig: s.isInvestmentGrade,
-      rat: s.spRating,
-      dt: s.dividendType,
-      prOver: s.currentPrice > s.callPrice ? +(((s.currentPrice / s.callPrice) - 1) * 100).toFixed(1) : null,
-      roe: s.returnOnEquity !== null ? +(s.returnOnEquity * 100).toFixed(1) : null,
-    }));
+  // Pre-filter to stocks with real data, then take the 200 most interesting
+  // candidates to keep the prompt focused and the analysis high-quality
+  const candidates = stocks
+    .filter(s => s.currentPrice > 0 && s.currentYield > 0 && s.annualDividend > 0)
+    .sort((a, b) => {
+      const score = (s: PreferredStock) =>
+        (s.callStatus === 'callable' || s.callStatus === 'well-past-call' ? 2 : 0) +
+        (s.currentYield > 0.07 ? 1 : 0) +
+        (s.ytc !== null ? 1 : 0);
+      return score(b) - score(a);
+    })
+    .slice(0, 200);
 
-  return `You are screening ${stocks.length} preferred stocks. Identify the TOP 10 most interesting trade ideas across these categories:
+  const stockData = candidates.map(s => ({
+    t: s.ticker,
+    sect: s.sector,
+    cy: +(s.currentYield * 100).toFixed(2),
+    ytc: s.ytc !== null ? +(s.ytc * 100).toFixed(2) : null,
+    cs: s.callStatus,
+    p2c: s.isPricedToCall,
+    pr: +s.currentPrice.toFixed(2),
+    call: s.callPrice,
+    ig: s.isInvestmentGrade,
+    rat: s.spRating,
+    dt: s.dividendType,
+    prOver: s.currentPrice > s.callPrice ? +(((s.currentPrice / s.callPrice) - 1) * 100).toFixed(1) : null,
+    roe: s.returnOnEquity !== null ? +(s.returnOnEquity * 100).toFixed(1) : null,
+  }));
+
+  return `You are screening ${candidates.length} preferred stocks (pre-filtered from ${stocks.length} total). Identify the TOP 10 most interesting trade ideas across these categories:
 
 1. BEST YTC - highest risk-adjusted yield to call (IG preferred with high YTC = best)
 2. OVERVALUED - priced to call, past call date, trading above call price = avoid/sell

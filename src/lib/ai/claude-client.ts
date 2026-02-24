@@ -85,20 +85,29 @@ export async function runBatchScreener(stocks: PreferredStock[]): Promise<BatchS
   const text = response.content.find(b => b.type === 'text')?.text ?? '';
 
   try {
-    const ideas = JSON.parse(text) as BatchScreenerIdea[];
+    // Strip markdown code fences Claude often wraps JSON in
+    const stripped = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+    // Greedy match to capture the full top-level JSON array
+    const match = stripped.match(/\[[\s\S]*\]/);
+    if (!match) {
+      console.error('[Claude] No JSON array found in batch screener response:', text.substring(0, 500));
+      return [];
+    }
+    const ideas = JSON.parse(match[0]) as BatchScreenerIdea[];
     return ideas.map(idea => ({
       ...idea,
       generatedAt: new Date().toISOString(),
     }));
-  } catch {
-    console.error('[Claude] Failed to parse batch screener response:', text.substring(0, 500));
+  } catch (err) {
+    console.error('[Claude] Failed to parse batch screener JSON:', err, text.substring(0, 500));
     return [];
   }
 }
 
 function parseTradeIdeaResponse(text: string, ticker: string): TradeIdea {
-  // Extract JSON block from the response
-  const jsonMatch = text.match(/\{[\s\S]*?\}/);
+  // Strip markdown code fences, then greedily match the full JSON object
+  const stripped = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+  const jsonMatch = stripped.match(/\{[\s\S]*\}/);
   let parsed: Partial<TradeIdea> = {};
 
   if (jsonMatch) {
